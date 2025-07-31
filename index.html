@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocZest - Ultimate Document & Image Converter</title>
+    <style>
+        :root {
+            --primary: #ff6b6b;
+            --secondary: #4ecdc4;
+            --accent: #ffe66d;
+            --dark: #292f36;
+            --light: #f7fff7;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark);
+            position: relative;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        body::before {
+            content: "DocZest";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 20vw;
+            font-weight: 900;
+            color: rgba(255, 107, 107, 0.05);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .converter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .converter-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .converter-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .drop-area {
+            border: 3px dashed var(--primary);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+            background-color: rgba(255, 107, 107, 0.05);
+        }
+        
+        .drop-area:hover {
+            background-color: rgba(255, 107, 107, 0.1);
+            border-color: var(--secondary);
+        }
+        
+        .drop-area.highlight {
+            background-color: rgba(78, 205, 196, 0.2);
+            border-color: var(--secondary);
+        }
+        
+        .drop-area i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .drop-area p {
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background: var(--dark);
+        }
+        
+        .btn-secondary:hover {
+            background: #1a1f24;
+        }
+        
+        .options {
+            margin-top: 1.5rem;
+        }
+        
+        .option-group {
+            margin-bottom: 1rem;
+        }
+        
+        .option-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .option-group select, 
+        .option-group input,
+        .option-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .range-group {
+            display: flex;
+            align-items: center;
+        }
+        
+        .range-group input[type="range"] {
+            flex: 1;
+            margin-right: 1rem;
+        }
+        
+        .range-group span {
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+            margin-right: 0.5rem;
+        }
+        
+        .preview-container {
+            margin-top: 1.5rem;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .preview-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .preview-item:last-child {
+            border-bottom: none;
+        }
+        
+        .preview-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            margin-right: 1rem;
+            border-radius: 4px;
+        }
+        
+        .preview-info {
+            flex: 1;
+        }
+        
+        .preview-info h4 {
+            margin-bottom: 0.25rem;
+        }
+        
+        .preview-info p {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .remove-btn {
+            color: var(--primary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            margin-top: 1rem;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .image-editor-container {
+            display: none;
+            margin-top: 1.5rem;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .editor-columns {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .editor-preview {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 400px;
+        }
+        
+        .editor-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .editor-controls {
+            flex: 1;
+        }
+        
+        .editor-tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .editor-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .editor-tab.active {
+            border-bottom: 2px solid var(--primary);
+            font-weight: bold;
+        }
+        
+        .editor-tab-content {
+            display: none;
+        }
+        
+        .editor-tab-content.active {
+            display: block;
+        }
+        
+        .color-picker {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .color-picker input[type="color"] {
+            width: 50px;
+            height: 30px;
+            margin-right: 1rem;
+            padding: 0;
+            border: 1px solid #ddd;
+        }
+        
+        @media (max-width: 768px) {
+            .converter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .editor-columns {
+                flex-direction: column;
+            }
+        }
+        
+        /* Cursor styles */
+        .drop-area, .btn, select, input[type="file"], .remove-btn, .editor-tab {
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M16,3C8.832,3,3,8.832,3,16s5.832,13,13,13s13-5.832,13-13S23.168,3,16,3z M16,27c-6.065,0-11-4.935-11-11S9.935,5,16,5 s11,4.935,11,11S22.065,27,16,27z' fill='%23ff6b6b'/><path d='M16,11c-2.757,0-5,2.243-5,5s2.243,5,5,5s5-2.243,5-5S18.757,11,16,11z' fill='%23ff6b6b'/></svg>"), auto;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>DocZest</h1>
+        <p class="subtitle">Your Ultimate Document & Image Conversion Tool</p>
+    </header>
+    
+    <div class="container">
+        <div class="converter-grid">
+            <!-- Image to PDF Converter -->
+            <div class="converter-card">
+                <div class="card-header">
+                    <i class="fas fa-file-pdf"></i> Image to PDF
+                </div>
+                <div class="card-body">
+                    <div id="imageToPdfDrop" class="drop-area" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'imageToPdf')">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & Drop your images here</p>
+                        <p>or</p>
+                        <input type="file" id="imageToPdfInput" accept="image/*" multiple style="display: none;" onchange="handleFileSelect(this, 'imageToPdf')">
+                        <button class="btn" onclick="document.getElementById('imageToPdfInput').click()">Select Files</button>
+                    </div>
+                    
+                    <div class="options">
+                        <div class="option-group">
+                            <label for="pdfLayout">PDF Layout:</label>
+                            <select id="pdfLayout">
+                                <option value="portrait">Portrait</option>
+                                <option value="landscape">Landscape</option>
+                                <option value="auto">Auto Detect</option>
+                            </select>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label for="pdfMargin">Page Margin (mm):</label>
+                            <input type="number" id="pdfMargin" min="0" max="50" value="10">
+                        </div>
+                        
+                        <div class="option-group">
+                            <label for="pdfQuality">Quality:</label>
+                            <select id="pdfQuality">
+                                <option value="high">High</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" id="singlePdf"> Combine all images into single PDF
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="imageToPdfPreview" class="preview-container" style="display: none;">
+                        <h4>Selected Files:</h4>
+                        <div id="imageToPdfFiles"></div>
+                    </div>
+                    
+                    <div class="progress-bar" id="imageToPdfProgress">
+                        <div class="progress" id="imageToPdfProgressBar"></div>
+                    </div>
+                    
+                    <button class="btn" id="imageToPdfConvert" style="display: none;" onclick="convertToPdf()">Convert to PDF</button>
+                </div>
+            </div>
+            
+            <!-- Image to Image Converter -->
+            <div class="converter-card">
+                <div class="card-header">
+                    <i class="fas fa-image"></i> Image Editor & Converter
+                </div>
+                <div class="card-body">
+                    <div id="imageToImageDrop" class="drop-area" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'imageToImage')">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & Drop your image here</p>
+                        <p>or</p>
+                        <input type="file" id="imageToImageInput" accept="image/*" style="display: none;" onchange="handleFileSelect(this, 'imageToImage')">
+                        <button class="btn" onclick="document.getElementById('imageToImageInput').click()">Select Image</button>
+                    </div>
+                    
+                    <div id="imageToImagePreview" class="preview-container" style="display: none;">
+                        <h4>Selected Image:</h4>
+                        <div id="imageToImageFiles"></div>
+                    </div>
+                    
+                    <div id="imageEditorContainer" class="image-editor-container">
+                        <div class="editor-columns">
+                            <div class="editor-preview">
+                                <img id="editorPreviewImage" src="" alt="Preview">
+                            </div>
+                            <div class="editor-controls">
+                                <div class="editor-tabs">
+                                    <div class="editor-tab active" onclick="switchEditorTab('resize')">Resize</div>
+                                    <div class="editor-tab" onclick="switchEditorTab('adjust')">Adjust</div>
+                                    <div class="editor-tab" onclick="switchEditorTab('effects')">Effects</div>
+                                    <div class="editor-tab" onclick="switchEditorTab('background')">Background</div>
+                                    <div class="editor-tab" onclick="switchEditorTab('convert')">Convert</div>
+                                </div>
+                                
+                                <!-- Resize Tab -->
+                                <div id="resizeTab" class="editor-tab-content active">
+                                    <div class="option-group">
+                                        <label>Dimensions (px)</label>
+                                        <div style="display: flex; gap: 1rem;">
+                                            <input type="number" id="imageWidth" placeholder="Width" class="dimension-input">
+                                            <input type="number" id="imageHeight" placeholder="Height" class="dimension-input">
+                                        </div>
+                                        <div class="checkbox-group">
+                                            <input type="checkbox" id="maintainAspect" checked>
+                                            <label for="maintainAspect">Maintain aspect ratio</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="resizeQuality">Resize Quality:</label>
+                                        <select id="resizeQuality">
+                                            <option value="high">High (slower)</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="low">Low (faster)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="resizeMethod">Resize Method:</label>
+                                        <select id="resizeMethod">
+                                            <option value="lanczos">Lanczos (sharp)</option>
+                                            <option value="bilinear" selected>Bilinear (smooth)</option>
+                                            <option value="nearest">Nearest (pixelated)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Adjust Tab -->
+                                <div id="adjustTab" class="editor-tab-content">
+                                    <div class="option-group">
+                                        <label for="brightness">Brightness:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="brightness" min="-100" max="100" value="0">
+                                            <span id="brightnessValue">0</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="contrast">Contrast:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="contrast" min="-100" max="100" value="0">
+                                            <span id="contrastValue">0</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="saturation">Saturation:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="saturation" min="-100" max="100" value="0">
+                                            <span id="saturationValue">0</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="sharpness">Sharpness:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="sharpness" min="0" max="100" value="0">
+                                            <span id="sharpnessValue">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Effects Tab -->
+                                <div id="effectsTab" class="editor-tab-content">
+                                    <div class="option-group">
+                                        <label for="blur">Blur:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="blur" min="0" max="20" value="0">
+                                            <span id="blurValue">0</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="opacity">Opacity:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="opacity" min="0" max="100" value="100">
+                                            <span id="opacityValue">100</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="grayscale">Grayscale:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="grayscale" min="0" max="100" value="0">
+                                            <span id="grayscaleValue">0</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="sepia">Sepia:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="sepia" min="0" max="100" value="0">
+                                            <span id="sepiaValue">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Background Tab -->
+                                <div id="backgroundTab" class="editor-tab-content">
+                                    <div class="option-group">
+                                        <label>Background Options</label>
+                                        <div class="checkbox-group">
+                                            <input type="checkbox" id="removeBackground">
+                                            <label for="removeBackground">Remove background (transparent)</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group" id="bgColorGroup">
+                                        <label for="bgColor">Background Color:</label>
+                                        <div class="color-picker">
+                                            <input type="color" id="bgColor" value="#ffffff">
+                                            <input type="text" id="bgColorHex" value="#ffffff" placeholder="Hex color">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="bgBlur">Background Blur:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="bgBlur" min="0" max="20" value="0">
+                                            <span id="bgBlurValue">0</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="bgOpacity">Background Opacity:</label>
+                                        <div class="range-group">
+                                            <input type="range" id="bgOpacity" min="0" max="100" value="100">
+                                            <span id="bgOpacityValue">100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Convert Tab -->
+                                <div id="convertTab" class="editor-tab-content">
+                                    <div class="option-group">
+                                        <label for="outputFormat">Output Format:</label>
+                                        <select id="outputFormat">
+                                            <option value="jpg">JPEG</option>
+                                            <option value="png">PNG</option>
+                                            <option value="webp">WebP</option>
+                                            <option value="gif">GIF</option>
+                                            <option value="bmp">BMP</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="option-group" id="jpegQualityGroup">
+                                        <label for="jpegQuality">JPEG Quality (1-100):</label>
+                                        <div class="range-group">
+                                            <input type="range" id="jpegQuality" min="1" max="100" value="85">
+                                            <span id="jpegQualityValue">85</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="outputFileName">Output File Name:</label>
+                                        <input type="text" id="outputFileName" placeholder="output">
+                                    </div>
+                                    
+                                    <div class="option-group">
+                                        <label for="outputDpi">DPI (Resolution):</label>
+                                        <select id="outputDpi">
+                                            <option value="72">72 (Low)</option>
+                                            <option value="150" selected>150 (Medium)</option>
+                                            <option value="300">300 (High)</option>
+                                            <option value="600">600 (Very High)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button class="btn" onclick="applyImageEdits()">Apply Changes</button>
+                            <button class="btn btn-secondary" onclick="resetImageEdits()">Reset</button>
+                            <button class="btn" onclick="downloadEditedImage()">Download</button>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-bar" id="imageToImageProgress">
+                        <div class="progress" id="imageToImageProgressBar"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PDF to Image Converter -->
+            <div class="converter-card">
+                <div class="card-header">
+                    <i class="fas fa-file-image"></i> PDF to Image
+                </div>
+                <div class="card-body">
+                    <div id="pdfToImageDrop" class="drop-area" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'pdfToImage')">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & Drop your PDF here</p>
+                        <p>or</p>
+                        <input type="file" id="pdfToImageInput" accept=".pdf" style="display: none;" onchange="handleFileSelect(this, 'pdfToImage')">
+                        <button class="btn" onclick="document.getElementById('pdfToImageInput').click()">Select PDF</button>
+                    </div>
+                    
+                    <div class="options">
+                        <div class="option-group">
+                            <label for="imageFormat">Output Format:</label>
+                            <select id="imageFormat">
+                                <option value="jpg">JPEG</option>
+                                <option value="png">PNG</option>
+                                <option value="webp">WebP</option>
+                            </select>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label for="imageQuality">Image Quality (1-100):</label>
+                            <input type="number" id="imageQuality" min="1" max="100" value="85">
+                        </div>
+                        
+                        <div class="option-group">
+                            <label for="imageDpi">DPI (Resolution):</label>
+                            <select id="imageDpi">
+                                <option value="72">72 (Low)</option>
+                                <option value="150" selected>150 (Medium)</option>
+                                <option value="300">300 (High)</option>
+                                <option value="600">600 (Very High)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" id="extractAllPages" checked> Extract all pages
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="pdfToImagePreview" class="preview-container" style="display: none;">
+                        <h4>Selected PDF:</h4>
+                        <div id="pdfToImageFiles"></div>
+                    </div>
+                    
+                    <div class="progress-bar" id="pdfToImageProgress">
+                        <div class="progress" id="pdfToImageProgressBar"></div>
+                    </div>
+                    
+                    <button class="btn" id="pdfToImageConvert" style="display: none;" onclick="convertPdfToImage()">Convert to Images</button>
+                </div>
+            </div>
+            
+            <!-- PDF to Word Converter -->
+            <div class="converter-card">
+                <div class="card-header">
+                    <i class="fas fa-file-word"></i> PDF to Word
+                </div>
+                <div class="card-body">
+                    <div id="pdfToWordDrop" class="drop-area" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'pdfToWord')">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & Drop your PDF here</p>
+                        <p>or</p>
+                        <input type="file" id="pdfToWordInput" accept=".pdf" style="display: none;" onchange="handleFileSelect(this, 'pdfToWord')">
+                        <button class="btn" onclick="document.getElementById('pdfToWordInput').click()">Select PDF</button>
+                    </div>
+                    
+                    <div class="options">
+                        <div class="option-group">
+                            <label for="wordFormat">Output Format:</label>
+                            <select id="wordFormat">
+                                <option value="docx">DOCX (Word)</option>
+                                <option value="doc">DOC (Word 97-2003)</option>
+                                <option value="odt">ODT (OpenDocument)</option>
+                                <option value="rtf">RTF (Rich Text)</option>
+                                <option value="txt">Plain Text</option>
+                            </select>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" id="preserveLayout" checked> Preserve original layout
+                            </label>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" id="extractImages"> Extract images
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="pdfToWordPreview" class="preview-container" style="display: none;">
+                        <h4>Selected PDF:</h4>
+                        <div id="pdfToWordFiles"></div>
+                    </div>
+                    
+                    <div class="progress-bar" id="pdfToWordProgress">
+                        <div class="progress" id="pdfToWordProgressBar"></div>
+                    </div>
+                    
+                    <button class="btn" id="pdfToWordConvert" style="display: none;" onclick="convertPdfToWord()">Convert to Word</button>
+                </div>
+            </div>
+            
+            <!-- Word to PDF Converter -->
+            <div class="converter-card">
+                <div class="card-header">
+                    <i class="fas fa-file-pdf"></i> Word to PDF
+                </div>
+                <div class="card-body">
+                    <div id="wordToPdfDrop" class="drop-area" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'wordToPdf')">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & Drop your Word document here</p>
+                        <p>or</p>
+                        <input type="file" id="wordToPdfInput" accept=".doc,.docx,.odt,.rtf" style="display: none;" onchange="handleFileSelect(this, 'wordToPdf')">
+                        <button class="btn" onclick="document.getElementById('wordToPdfInput').click()">Select File</button>
+                    </div>
+                    
+                    <div class="options">
+                        <div class="option-group">
+                            <label for="wordPdfLayout">PDF Layout:</label>
+                            <select id="wordPdfLayout">
+                                <option value="portrait">Portrait</option>
+                                <option value="landscape">Landscape</option>
+                            </select>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label for="wordPdfMargin">Page Margin (mm):</label>
+                            <input type="number" id="wordPdfMargin" min="0" max="50" value="10">
+                        </div>
+                        
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" id="preserveWordFormatting" checked> Preserve formatting
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="wordToPdfPreview" class="preview-container" style="display: none;">
+                        <h4>Selected File:</h4>
+                        <div id="wordToPdfFiles"></div>
+                    </div>
+                    
+                    <div class="progress-bar" id="wordToPdfProgress">
+                        <div class="progress" id="wordToPdfProgressBar"></div>
+                    </div>
+                    
+                    <button class="btn" id="wordToPdfConvert" style="display: none;" onclick="convertWordToPdf()">Convert to PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2023 DocZest - Online Document & Image Converter. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Global variables to store files and image editor state
+        let imageToPdfFiles = [];
+        let imageToImageFile = null;
+        let pdfToImageFile = null;
+        let pdfToWordFile = null;
+        let wordToPdfFile = null;
+        let originalImage = null;
+        let currentImage = null;
+        
+        // Handle drag over
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.add('highlight');
+        }
+        
+        // Handle drag leave
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('highlight');
+        }
+        
+        // Handle drop
+        function handleDrop(e, converterType) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('highlight');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFiles(files, converterType);
+            }
+        }
+        
+        // Handle file select via input
+        function handleFileSelect(input, converterType) {
+            const files = input.files;
+            if (files.length > 0) {
+                handleFiles(files, converterType);
+            }
+        }
+        
+        // Process files based on converter type
+        function handleFiles(files, converterType) {
+            switch (converterType) {
+                case 'imageToPdf':
+                    imageToPdfFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+                    displayImageToPdfFiles();
+                    break;
+                case 'imageToImage':
+                    if (files[0].type.startsWith('image/')) {
+                        imageToImageFile = files[0];
+                        displayImageToImageFile();
+                        initImageEditor(files[0]);
+                    } else {
+                        alert('Please select an image file');
+                    }
+                    break;
+                case 'pdfToImage':
+                    if (files[0].type === 'application/pdf' || files[0].name.endsWith('.pdf')) {
+                        pdfToImageFile = files[0];
+                        displayPdfToImageFile();
+                    } else {
+                        alert('Please select a PDF file');
+                    }
+                    break;
+                case 'pdfToWord':
+                    if (files[0].type === 'application/pdf' || files[0].name.endsWith('.pdf')) {
+                        pdfToWordFile = files[0];
+                        displayPdfToWordFile();
+                    } else {
+                        alert('Please select a PDF file');
+                    }
+                    break;
+                case 'wordToPdf':
+                    const wordExtensions = ['.doc', '.docx', '.odt', '.rtf'];
+                    if (wordExtensions.some(ext => files[0].name.endsWith(ext))) {
+                        wordToPdfFile = files[0];
+                        displayWordToPdfFile();
+                    } else {
+                        alert('Please select a Word document (DOC, DOCX, ODT, RTF)');
+                    }
+                    break;
+            }
+        }
+        
+        // Display selected images for PDF conversion
+        function displayImageToPdfFiles() {
+            const previewContainer = document.getElementById('imageToPdfPreview');
+            const filesContainer = document.getElementById('imageToPdfFiles');
+            const convertBtn = document.getElementById('imageToPdfConvert');
+            
+            filesContainer.innerHTML = '';
+            
+            if (imageToPdfFiles.length === 0) {
+                previewContainer.style.display = 'none';
+                convertBtn.style.display = 'none';
+                return;
+            }
+            
+            imageToPdfFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'preview-item';
+                
+                let thumbnail = '';
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        thumbnail = `<img src="${e.target.result}" alt="${file.name}">`;
+                        fileItem.innerHTML = `
+                            ${thumbnail}
+                            <div class="preview-info">
+                                <h4>${file.name}</h4>
+                                <p>${formatFileSize(file.size)} • ${file.type}</p>
+                            </div>
+                            <button class="remove-btn" onclick="removeImageToPdfFile(${index})"><i class="fas fa-times"></i></button>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    fileItem.innerHTML = `
+                        <i class="fas fa-file-image" style="font-size: 2rem; margin-right: 1rem;"></i>
+                        <div class="preview-info">
+                            <h4>${file.name}</h4>
+                            <p>${formatFileSize(file.size)} • ${file.type}</p>
+                        </div>
+                        <button class="remove-btn" onclick="removeImageToPdfFile(${index})"><i class="fas fa-times"></i></button>
+                    `;
+                }
+                
+                filesContainer.appendChild(fileItem);
+            });
+            
+            previewContainer.style.display = 'block';
+            convertBtn.style.display = 'inline-block';
+        }
+        
+        // Display selected image for image conversion/editing
+        function displayImageToImageFile() {
+            const previewContainer = document.getElementById('imageToImagePreview');
+            const filesContainer = document.getElementById('imageToImageFiles');
+            
+            filesContainer.innerHTML = '';
+            
+            if (!imageToImageFile) {
+                previewContainer.style.display = 'none';
+                document.getElementById('imageEditorContainer').style.display = 'none';
+                return;
+            }
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'preview-item';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fileItem.innerHTML = `
+                    <img src="${e.target.result}" alt="${imageToImageFile.name}">
+                    <div class="preview-info">
+                        <h4>${imageToImageFile.name}</h4>
+                        <p>${formatFileSize(imageToImageFile.size)} • ${imageToImageFile.type}</p>
+                    </div>
+                    <button class="remove-btn" onclick="removeImageToImageFile()"><i class="fas fa-times"></i></button>
+                `;
+            };
+            reader.readAsDataURL(imageToImageFile);
+            
+            filesContainer.appendChild(fileItem);
+            previewContainer.style.display = 'block';
+        }
+        
+        // Display selected PDF for image conversion
+        function displayPdfToImageFile() {
+            const previewContainer = document.getElementById('pdfToImagePreview');
+            const filesContainer = document.getElementById('pdfToImageFiles');
+            const convertBtn = document.getElementById('pdfToImageConvert');
+            
+            filesContainer.innerHTML = '';
+            
+            if (!pdfToImageFile) {
+                previewContainer.style.display = 'none';
+                convertBtn.style.display = 'none';
+                return;
+            }
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'preview-item';
+            fileItem.innerHTML = `
+                <i class="fas fa-file-pdf" style="font-size: 2rem; margin-right: 1rem; color: #ff6b6b;"></i>
+                <div class="preview-info">
+                    <h4>${pdfToImageFile.name}</h4>
+                    <p>${formatFileSize(pdfToImageFile.size)} • PDF</p>
+                </div>
+                <button class="remove-btn" onclick="removePdfToImageFile()"><i class="fas fa-times"></i></button>
+            `;
+            
+            filesContainer.appendChild(fileItem);
+            previewContainer.style.display = 'block';
+            convertBtn.style.display = 'inline-block';
+        }
+        
+        // Display selected PDF for Word conversion
+        function displayPdfToWordFile() {
+            const previewContainer = document.getElementById('pdfToWordPreview');
+            const filesContainer = document.getElementById('pdfToWordFiles');
+            const convertBtn = document.getElementById('pdfToWordConvert');
+            
+            filesContainer.innerHTML = '';
+            
+            if (!pdfToWordFile) {
+                previewContainer.style.display = 'none';
+                convertBtn.style.display = 'none';
+                return;
+            }
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'preview-item';
+            fileItem.innerHTML = `
+                <i class="fas fa-file-pdf" style="font-size: 2rem; margin-right: 1rem; color: #ff6b6b;"></i>
+                <div class="preview-info">
+                    <h4>${pdfToWordFile.name}</h4>
+                    <p>${formatFileSize(pdfToWordFile.size)} • PDF</p>
+                </div>
+                <button class="remove-btn" onclick="removePdfToWordFile()"><i class="fas fa-times"></i></button>
+            `;
+            
+            filesContainer.appendChild(fileItem);
+            previewContainer.style.display = 'block';
+            convertBtn.style.display = 'inline-block';
+        }
+        
+        // Display selected Word for PDF conversion
+        function displayWordToPdfFile() {
+            const previewContainer = document.getElementById('wordToPdfPreview');
+            const filesContainer = document.getElementById('wordToPdfFiles');
+            const convertBtn = document.getElementById('wordToPdfConvert');
+            
+            filesContainer.innerHTML = '';
+            
+            if (!wordToPdfFile) {
+                previewContainer.style.display = 'none';
+                convertBtn.style.display = 'none';
+                return;
+            }
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'preview-item';
+            fileItem.innerHTML = `
+                <i class="fas fa-file-word" style="font-size: 2rem; margin-right: 1rem; color: #2b579a;"></i>
+                <div class="preview-info">
+                    <h4>${wordToPdfFile.name}</h4>
+                    <p>${formatFileSize(wordToPdfFile.size)} • ${wordToPdfFile.name.split('.').pop().toUpperCase()}</p>
+                </div>
+                <button class="remove-btn" onclick="removeWordToPdfFile()"><i class="fas fa-times"></i></button>
+            `;
+            
+            filesContainer.appendChild(fileItem);
+            previewContainer.style.display = 'block';
+            convertBtn.style.display = 'inline-block';
+        }
+        
+        // Remove file from image to PDF list
+        function removeImageToPdfFile(index) {
+            imageToPdfFiles.splice(index, 1);
+            displayImageToPdfFiles();
+        }
+        
+        // Remove image to image file
+        function removeImageToImageFile() {
+            imageToImageFile = null;
+            displayImageToImageFile();
+            document.getElementById('imageEditorContainer').style.display = 'none';
+        }
+        
+        // Remove PDF to image file
+        function removePdfToImageFile() {
+            pdfToImageFile = null;
+            displayPdfToImageFile();
+        }
+        
+        // Remove PDF to Word file
+        function removePdfToWordFile() {
+            pdfToWordFile = null;
+            displayPdfToWordFile();
+        }
+        
+        // Remove Word to PDF file
+        function removeWordToPdfFile() {
+            wordToPdfFile = null;
+            displayWordToPdfFile();
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Initialize image editor
+        function initImageEditor(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    currentImage = new Image();
+                    currentImage.src = originalImage.src;
+                    document.getElementById('editorPreviewImage').src = currentImage.src;
+                    document.getElementById('imageEditorContainer').style.display = 'block';
+                    
+                    // Set initial dimensions
+                    document.getElementById('imageWidth').value = originalImage.width;
+                    document.getElementById('imageHeight').value = originalImage.height;
+                    
+                    // Initialize range value displays
+                    updateRangeValue('brightness');
+                    updateRangeValue('contrast');
+                    updateRangeValue('saturation');
+                    updateRangeValue('sharpness');
+                    updateRangeValue('blur');
+                    updateRangeValue('opacity');
+                    updateRangeValue('grayscale');
+                    updateRangeValue('sepia');
+                    updateRangeValue('bgBlur');
+                    updateRangeValue('bgOpacity');
+                    updateRangeValue('jpegQuality');
+                    
+                    // Set up event listeners for range inputs
+                    document.querySelectorAll('input[type="range"]').forEach(input => {
+                        input.addEventListener('input', function() {
+                            updateRangeValue(this.id);
+                        });
+                    });
+                    
+                    // Set up event listeners for dimension inputs
+                    document.getElementById('imageWidth').addEventListener('input', updateDimensions);
+                    document.getElementById('imageHeight').addEventListener('input', updateDimensions);
+                    
+                    // Set up event listener for background color
+                    document.getElementById('bgColor').addEventListener('input', function() {
+                        document.getElementById('bgColorHex').value = this.value;
+                    });
+                    
+                    document.getElementById('bgColorHex').addEventListener('input', function() {
+                        if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+                            document.getElementById('bgColor').value = this.value;
+                        }
+                    });
+                    
+                    // Set up event listener for remove background checkbox
+                    document.getElementById('removeBackground').addEventListener('change', function() {
+                        document.getElementById('bgColorGroup').style.display = this.checked ? 'none' : 'block';
+                    });
+                    
+                    // Set up event listener for output format
+                    document.getElementById('outputFormat').addEventListener('change', function() {
+                        document.getElementById('jpegQualityGroup').style.display = 
+                            this.value === 'jpg' ? 'block' : 'none';
+                    });
+                };
+                originalImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Update range value display
+        function updateRangeValue(id) {
+            const value = document.getElementById(id).value;
+            document.getElementById(`${id}Value`).textContent = value;
+        }
+        
+        // Update image dimensions while maintaining aspect ratio
+        function updateDimensions() {
+            const widthInput = document.getElementById('imageWidth');
+            const heightInput = document.getElementById('imageHeight');
+            const maintainAspect = document.getElementById('maintainAspect').checked;
+            
+            if (maintainAspect && originalImage) {
+                if (this === widthInput) {
+                    const ratio = originalImage.height / originalImage.width;
+                    heightInput.value = Math.round(widthInput.value * ratio);
+                } else if (this === heightInput) {
+                    const ratio = originalImage.width / originalImage.height;
+                    widthInput.value = Math.round(heightInput.value * ratio);
+                }
+            }
+        }
+        
+        // Switch between editor tabs
+        function switchEditorTab(tabId) {
+            // Hide all tab contents and remove active class from tabs
+            document.querySelectorAll('.editor-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content and add active class to tab
+            document.getElementById(`${tabId}Tab`).classList.add('active');
+            document.querySelector(`.editor-tab[onclick="switchEditorTab('${tabId}')"]`).classList.add('active');
+        }
+        
+        // Apply image edits
+        function applyImageEdits() {
+            if (!originalImage) return;
+            
+            // In a real implementation, you would use canvas to apply these edits
+            // This is just a simulation for the UI
+            
+            alert('In a real implementation, this would apply all the selected edits to the image using canvas API.');
+            
+            // Simulate applying changes by updating the preview
+            const previewImg = document.getElementById('editorPreviewImage');
+            previewImg.style.filter = `
+                brightness(${document.getElementById('brightness').value}%)
+                contrast(${document.getElementById('contrast').value}%)
+                saturate(${document.getElementById('saturation').value}%)
+                blur(${document.getElementById('blur').value}px)
+                opacity(${document.getElementById('opacity').value}%)
+                grayscale(${document.getElementById('grayscale').value}%)
+                sepia(${document.getElementById('sepia').value}%)
+            `;
+        }
+        
+        // Reset image edits
+        function resetImageEdits() {
+            if (!originalImage) return;
+            
+            // Reset all controls to default values
+            document.getElementById('brightness').value = 0;
+            document.getElementById('contrast').value = 0;
+            document.getElementById('saturation').value = 0;
+            document.getElementById('sharpness').value = 0;
+            document.getElementById('blur').value = 0;
+            document.getElementById('opacity').value = 100;
+            document.getElementById('grayscale').value = 0;
+            document.getElementById('sepia').value = 0;
+            document.getElementById('removeBackground').checked = false;
+            document.getElementById('bgColor').value = '#ffffff';
+            document.getElementById('bgColorHex').value = '#ffffff';
+            document.getElementById('bgBlur').value = 0;
+            document.getElementById('bgOpacity').value = 100;
+            document.getElementById('imageWidth').value = originalImage.width;
+            document.getElementById('imageHeight').value = originalImage.height;
+            document.getElementById('maintainAspect').checked = true;
+            document.getElementById('resizeQuality').value = 'medium';
+            document.getElementById('resizeMethod').value = 'bilinear';
+            document.getElementById('outputFormat').value = 'jpg';
+            document.getElementById('jpegQuality').value = 85;
+            document.getElementById('outputFileName').value = '';
+            document.getElementById('outputDpi').value = '150';
+            
+            // Update value displays
+            updateRangeValue('brightness');
+            updateRangeValue('contrast');
+            updateRangeValue('saturation');
+            updateRangeValue('sharpness');
+            updateRangeValue('blur');
+            updateRangeValue('opacity');
+            updateRangeValue('grayscale');
+            updateRangeValue('sepia');
+            updateRangeValue('bgBlur');
+            updateRangeValue('bgOpacity');
+            updateRangeValue('jpegQuality');
+            
+            // Reset preview image
+            const previewImg = document.getElementById('editorPreviewImage');
+            previewImg.style.filter = 'none';
+            previewImg.src = originalImage.src;
+        }
+        
+        // Download edited image
+        function downloadEditedImage() {
+            if (!originalImage) return;
+            
+            // In a real implementation, you would generate the edited image and trigger download
+            alert('In a real implementation, this would generate the edited image with all applied changes and trigger a download.');
+        }
+        
+        // Convert images to PDF
+        function convertToPdf() {
+            if (imageToPdfFiles.length === 0) {
+                alert('Please select at least one image');
+                return;
+            }
+            
+            const progressBar = document.getElementById('imageToPdfProgress');
+            const progress = document.getElementById('imageToPdfProgressBar');
+            const convertBtn = document.getElementById('imageToPdfConvert');
+            
+            progressBar.style.display = 'block';
+            convertBtn.disabled = true;
+            
+            // Simulate conversion process
+            let progressValue = 0;
+            const interval = setInterval(() => {
+                progressValue += 5;
+                progress.style.width = `${progressValue}%`;
+                
+                if (progressValue >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        alert('Conversion complete! In a real implementation, this would download the PDF.');
+                        progressBar.style.display = 'none';
+                        convertBtn.disabled = false;
+                        progress.style.width = '0%';
+                    }, 500);
+                }
+            }, 200);
+        }
+        
+        // Convert PDF to images
+        function convertPdfToImage() {
+            if (!pdfToImageFile) {
+                alert('Please select a PDF file');
+                return;
+            }
+            
+            const progressBar = document.getElementById('pdfToImageProgress');
+            const progress = document.getElementById('pdfToImageProgressBar');
+            const convertBtn = document.getElementById('pdfToImageConvert');
+            
+            progressBar.style.display = 'block';
+            convertBtn.disabled = true;
+            
+            // Simulate conversion process
+            let progressValue = 0;
+            const interval = setInterval(() => {
+                progressValue += 5;
+                progress.style.width = `${progressValue}%`;
+                
+                if (progressValue >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        alert('Conversion complete! In a real implementation, this would download the images as a ZIP file.');
+                        progressBar.style.display = 'none';
+                        convertBtn.disabled = false;
+                        progress.style.width = '0%';
+                    }, 500);
+                }
+            }, 200);
+        }
+        
+        // Convert PDF to Word
+        function convertPdfToWord() {
+            if (!pdfToWordFile) {
+                alert('Please select a PDF file');
+                return;
+            }
+            
+            const progressBar = document.getElementById('pdfToWordProgress');
+            const progress = document.getElementById('pdfToWordProgressBar');
+            const convertBtn = document.getElementById('pdfToWordConvert');
+            
+            progressBar.style.display = 'block';
+            convertBtn.disabled = true;
+            
+            // Simulate conversion process
+            let progressValue = 0;
+            const interval = setInterval(() => {
+                progressValue += 5;
+                progress.style.width = `${progressValue}%`;
+                
+                if (progressValue >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        alert('Conversion complete! In a real implementation, this would download the Word document.');
+                        progressBar.style.display = 'none';
+                        convertBtn.disabled = false;
+                        progress.style.width = '0%';
+                    }, 500);
+                }
+            }, 200);
+        }
+        
+        // Convert Word to PDF
+        function convertWordToPdf() {
+            if (!wordToPdfFile) {
+                alert('Please select a Word document');
+                return;
+            }
+            
+            const progressBar = document.getElementById('wordToPdfProgress');
+            const progress = document.getElementById('wordToPdfProgressBar');
+            const convertBtn = document.getElementById('wordToPdfConvert');
+            
+            progressBar.style.display = 'block';
+            convertBtn.disabled = true;
+            
+            // Simulate conversion process
+            let progressValue = 0;
+            const interval = setInterval(() => {
+                progressValue += 5;
+                progress.style.width = `${progressValue}%`;
+                
+                if (progressValue >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        alert('Conversion complete! In a real implementation, this would download the PDF.');
+                        progressBar.style.display = 'none';
+                        convertBtn.disabled = false;
+                        progress.style.width = '0%';
+                    }, 500);
+                }
+            }, 200);
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up range input event listeners for all tabs
+            document.querySelectorAll('input[type="range"]').forEach(input => {
+                input.addEventListener('input', function() {
+                    updateRangeValue(this.id);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
