@@ -40,9 +40,16 @@
         </script><!DOCTYPE html>
 <html lang="en">
 <head>
+    <<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DocZest - Ultimate Document & Image Converter</title>
+    <!-- Your existing styles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <!-- Add these two new lines -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js"></script>
     <style>
         :root {
             --primary: #ff6b6b;
@@ -1598,19 +1605,258 @@
         }
 
         // Convert PDF to images
-        function convertPdfToImage() {
-            alert('PDF to Image conversion requires server-side processing or a library like pdf2pic, which is not implemented in this client-side demo. Please integrate with a backend service for full functionality.');
+        async function convertPdfToImage() {
+    if (!pdfToImageFile) {
+        alert('Please select a PDF file');
+        return;
+    }
+
+    const progressBar = document.getElementById('pdfToImageProgress');
+    const progress = document.getElementById('pdfToImageProgressBar');
+    const convertBtn = document.getElementById('pdfToImageConvert');
+    const format = document.getElementById('imageFormat').value;
+    const quality = parseInt(document.getElementById('imageQuality').value) / 100;
+    const extractAll = document.getElementById('extractAllPages').checked;
+    
+    progressBar.style.display = 'block';
+    convertBtn.disabled = true;
+    
+    try {
+        // Load the PDF file
+        const arrayBuffer = await pdfToImageFile.arrayBuffer();
+        
+        // Initialize PDF.js
+        const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+        const pdf = await loadingTask.promise;
+        
+        // Determine how many pages to process
+        const totalPages = extractAll ? pdf.numPages : 1;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            const page = await pdf.getPage(i);
+            
+            // Set scale based on DPI
+            const dpi = parseInt(document.getElementById('imageDpi').value);
+            const scale = dpi / 72; // 72 is standard PDF DPI
+            
+            const viewport = page.getViewport({ scale });
+            
+            // Create canvas for rendering
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            // Render PDF page to canvas
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+            
+            // Convert canvas to image
+            let mimeType, extension;
+            switch(format) {
+                case 'png':
+                    mimeType = 'image/png';
+                    extension = 'png';
+                    break;
+                case 'webp':
+                    mimeType = 'image/webp';
+                    extension = 'webp';
+                    break;
+                default:
+                    mimeType = 'image/jpeg';
+                    extension = 'jpg';
+            }
+            
+            const imageData = canvas.toDataURL(mimeType, format === 'jpeg' ? quality : undefined);
+            
+            // Download the image
+            const link = document.createElement('a');
+            link.href = imageData;
+            link.download = `${pdfToImageFile.name.replace('.pdf', '')}_page_${i}.${extension}`;
+            link.click();
+            
+            // Update progress
+            progress.style.width = `${(i / totalPages) * 100}%`;
         }
+        
+        progressBar.style.display = 'none';
+        convertBtn.disabled = false;
+        progress.style.width = '0%';
+    } catch (error) {
+        console.error('PDF to image conversion error:', error);
+        alert('An error occurred during conversion. Please try again.');
+        progressBar.style.display = 'none';
+        convertBtn.disabled = false;
+        progress.style.width = '0%';
+    }
+}
 
         // Convert PDF to Word
-        function convertPdfToWord() {
-            alert('PDF to Word conversion requires server-side processing with OCR capabilities, which is not implemented in this client-side demo. Please integrate with a backend service for full functionality.');
+        async function convertPdfToWord() {
+    if (!pdfToWordFile) {
+        alert('Please select a PDF file');
+        return;
+    }
+
+    const progressBar = document.getElementById('pdfToWordProgress');
+    const progress = document.getElementById('pdfToWordProgressBar');
+    const convertBtn = document.getElementById('pdfToWordConvert');
+    const format = document.getElementById('wordFormat').value;
+    const preserveLayout = document.getElementById('preserveLayout').checked;
+    
+    progressBar.style.display = 'block';
+    convertBtn.disabled = true;
+    
+    try {
+        // Load the PDF file
+        const arrayBuffer = await pdfToWordFile.arrayBuffer();
+        
+        // Initialize PDF.js
+        const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+        const pdf = await loadingTask.promise;
+        
+        let textContent = '';
+        
+        // Extract text from each page
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const strings = content.items.map(item => item.str);
+            
+            if (preserveLayout) {
+                textContent += strings.join(' ') + '\n\n';
+            } else {
+                textContent += strings.join('\n') + '\n\n';
+            }
+            
+            // Update progress
+            progress.style.width = `${(i / pdf.numPages) * 100}%`;
         }
+        
+        // Create Word document (simplified)
+        let blob, fileName;
+        if (format === 'txt') {
+            // Plain text
+            blob = new Blob([textContent], { type: 'text/plain' });
+            fileName = `${pdfToWordFile.name.replace('.pdf', '')}.txt`;
+        } else {
+            // For other formats, we'll create a simple HTML-based document
+            const htmlContent = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+                      xmlns:w="urn:schemas-microsoft-com:office:word" 
+                      xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${pdfToWordFile.name}</title>
+                </head>
+                <body>
+                    ${textContent.split('\n\n').map(para => `<p>${para}</p>`).join('')}
+                </body>
+                </html>
+            `;
+            
+            if (format === 'rtf') {
+                // Very simplified RTF
+                const rtfContent = `{\\rtf1\\ansi\\deff0\n${textContent.split('\n').map(line => line + '\\par').join('\n')}\n}`;
+                blob = new Blob([rtfContent], { type: 'application/rtf' });
+                fileName = `${pdfToWordFile.name.replace('.pdf', '')}.rtf`;
+            } else {
+                // For DOCX/DOC/ODT, we'll use HTML (browsers can handle this)
+                blob = new Blob([htmlContent], { type: 'application/msword' });
+                fileName = `${pdfToWordFile.name.replace('.pdf', '')}.${format === 'odt' ? 'odt' : 'doc'}`;
+            }
+        }
+        
+        // Download the file
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        progressBar.style.display = 'none';
+        convertBtn.disabled = false;
+        progress.style.width = '0%';
+    } catch (error) {
+        console.error('PDF to Word conversion error:', error);
+        alert('An error occurred during conversion. Please try again.');
+        progressBar.style.display = 'none';
+        convertBtn.disabled = false;
+        progress.style.width = '0%';
+    }
+}
 
         // Convert Word to PDF
-        function convertWordToPdf() {
-            alert('Word to PDF conversion requires server-side processing with libraries like docx2pdf, which is not implemented in this client-side demo. Please integrate with a backend service for full functionality.');
+        async function convertWordToPdf() {
+    if (!wordToPdfFile) {
+        alert('Please select a Word document');
+        return;
+    }
+
+    const progressBar = document.getElementById('wordToPdfProgress');
+    const progress = document.getElementById('wordToPdfProgressBar');
+    const convertBtn = document.getElementById('wordToPdfConvert');
+    const layout = document.getElementById('wordPdfLayout').value;
+    const margin = parseFloat(document.getElementById('wordPdfMargin').value) * 2.834645669; // mm to points
+    const preserveFormatting = document.getElementById('preserveWordFormatting').checked;
+    
+    progressBar.style.display = 'block';
+    convertBtn.disabled = true;
+    
+    try {
+        // Read the Word file as text (simplified approach)
+        const textContent = await wordToPdfFile.text();
+        
+        // Create a new PDF document
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        let page = pdfDoc.addPage(layout === 'landscape' ? 
+            [PDFLib.PageSizes.A4[1], PDFLib.PageSizes.A4[0]] : 
+            PDFLib.PageSizes.A4);
+        
+        // Extract text and add to PDF
+        const lines = textContent.split('\n').filter(line => line.trim());
+        
+        let y = page.getHeight() - margin - 50; // Start position
+        const fontSize = 12;
+        const lineHeight = fontSize * 1.2;
+        
+        for (const line of lines) {
+            if (y < margin) {
+                // Add new page if we run out of space
+                page = pdfDoc.addPage(layout === 'landscape' ? 
+                    [PDFLib.PageSizes.A4[1], PDFLib.PageSizes.A4[0]] : 
+                    PDFLib.PageSizes.A4);
+                y = page.getHeight() - margin - 50;
+            }
+            
+            page.drawText(line, {
+                x: margin,
+                y: y,
+                size: fontSize,
+                font: await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica)
+            });
+            
+            y -= lineHeight;
         }
+        
+        // Save and download the PDF
+        const pdfBytes = await pdfDoc.save();
+        downloadFile(pdfBytes, `${wordToPdfFile.name.replace(/\.[^/.]+$/, '')}.pdf`);
+        
+        progressBar.style.display = 'none';
+        convertBtn.disabled = false;
+        progress.style.width = '0%';
+    } catch (error) {
+        console.error('Word to PDF conversion error:', error);
+        alert('An error occurred during conversion. Please try again.');
+        progressBar.style.display = 'none';
+        convertBtn.disabled = false;
+        progress.style.width = '0%';
+    }
+}
 
         // Download file
         function downloadFile(data, fileName) {
